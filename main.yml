@@ -12,5 +12,15 @@ events:
         type: "Integer"
       - name: "flagCount"
         type: "Integer"
+  - name: "HealthCheck"
+    parameters:
+      - name: "component"
+        type: "String"
+      - name: "checker"
+        type: "String"
+      - name: "timestamp"
+        type: "Integer"
+      - name: "status"
+        type: "String"
 permissions:
   - methods: ["*"]

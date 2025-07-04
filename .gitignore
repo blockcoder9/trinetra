@@ -1,0 +1,68 @@
+# Neo Wallet Files (CRITICAL - Never commit these)
+*.json
+my-wallet.json
+*.wallet
+team-*-wallet.json
+
+# Compiled Contract Files (Can be regenerated)
+*.nef
+*.manifest.json
+
+# Go Build Files
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.sum
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment Files
+.env
+.env.local
+.env.*.local
+
+# Temporary Files
+tmp/
+temp/
+
+# Node.js (if using JavaScript integration)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if using Python integration)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Backup files
+*.backup
+*.bak
+*.orig
