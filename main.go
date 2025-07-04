@@ -1,85 +1,69 @@
 package main
 
 import (
-	"encoding/json"
-	"log"
-	"net/http"
-	"sync"
-	"time"
+	"github.com/nspcc-dev/neo-go/pkg/interop/runtime"
+	"github.com/nspcc-dev/neo-go/pkg/interop/storage"
 )
 
-type Report struct {
-	Reporter  string    `json:"reporter"`
-	Timestamp time.Time `json:"timestamp"`
-}
+const prefix = "flags:"
 
-type FlagContract struct {
-	reports map[string][]Report
-	mu      sync.Mutex
-}
-
-func NewFlagContract() *FlagContract {
-	return &FlagContract{
-		reports: make(map[string][]Report),
+// Main handles method dispatch
+func Main(operation string, args []interface{}) interface{} {
+	switch operation {
+	case "flag":
+		if len(args) != 2 {
+			return false
+		}
+		return flagWallet(args[0].(string), args[1].(string))
+	case "count":
+		if len(args) != 1 {
+			return 0
+		}
+		return getReportCount(args[0].(string))
+	default:
+		return "Unknown method"
 	}
 }
 
-func (fc *FlagContract) FlagWallet(wallet string, reporter string) error {
-	fc.mu.Lock()
-	defer fc.mu.Unlock()
+func flagWallet(wallet string, reporter string) bool {
+	ctx := storage.GetContext()
+	key := prefix + wallet
 
-	report := Report{
-		Reporter:  reporter,
-		Timestamp: time.Now(),
+	// Get the stored value
+	value := storage.Get(ctx, key)
+	var count int
+	if value != nil {
+		// Use single-value type assertion
+		count = bytesToInt(value.([]byte))
 	}
-	fc.reports[wallet] = append(fc.reports[wallet], report)
-	return nil
+
+	storage.Put(ctx, key, intToBytes(count+1))
+	runtime.Log("Flagged " + wallet + " by " + reporter)
+	return true
 }
 
-func (fc *FlagContract) GetReportCount(wallet string) int {
-	fc.mu.Lock()
-	defer fc.mu.Unlock()
+func getReportCount(wallet string) int {
+	ctx := storage.GetContext()
+	key := prefix + wallet
 
-	return len(fc.reports[wallet])
+	value := storage.Get(ctx, key)
+	if value == nil {
+		return 0
+	}
+
+	// Use single-value type assertion
+	return bytesToInt(value.([]byte))
 }
 
-var contract = NewFlagContract()
-
-func flagWalletHandler(w http.ResponseWriter, r *http.Request) {
-	var data struct {
-		Wallet   string `json:"wallet"`
-		Reporter string `json:"reporter"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
-	}
-	if data.Wallet == "" || data.Reporter == "" {
-		http.Error(w, "Wallet and Reporter are required", http.StatusBadRequest)
-		return
-	}
-	_ = contract.FlagWallet(data.Wallet, data.Reporter)
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Wallet flagged successfully"))
+// intToBytes converts an int to []byte (little endian)
+func intToBytes(n int) []byte {
+	return []byte{byte(n)} // Neo only supports small integers in this format
 }
 
-func getReportCountHandler(w http.ResponseWriter, r *http.Request) {
-	wallet := r.URL.Query().Get("wallet")
-	if wallet == "" {
-		http.Error(w, "Wallet address required", http.StatusBadRequest)
-		return
+// bytesToInt converts []byte to int (little endian)
+func bytesToInt(b []byte) int {
+	if len(b) == 0 {
+		return 0
 	}
-	count := contract.GetReportCount(wallet)
-	resp := map[string]interface{}{
-		"wallet":       wallet,
-		"report_count": count,
-	}
-	json.NewEncoder(w).Encode(resp)
-}
-
-func main() {
-	http.HandleFunc("/flag", flagWalletHandler)
-	http.HandleFunc("/count", getReportCountHandler)
-	log.Println("[Trinetra Mock Contract] Listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	return int(b[0]) // assuming single-byte value for simplicity
 }

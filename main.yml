@@ -1,0 +1,12 @@
+name: "Trinetra Flag Contract"
+sourceurl: https://github.com/your-repo/trinetra-flag
+supportedstandards: []
+events:
+  - name: "FlaggedWallet"
+    parameters:
+      - name: "wallet"
+        type: "String"
+      - name: "reporter"
+        type: "String"
+permissions:
+  - methods: ["*"]
