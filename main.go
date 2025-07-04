@@ -20,6 +20,8 @@ func Main(operation string, args []interface{}) interface{} {
 			return 0
 		}
 		return getReportCount(args[0].(string))
+	case "testEvents":
+		return generateTestEvents()
 	default:
 		return "Unknown method"
 	}
@@ -37,7 +39,16 @@ func flagWallet(wallet string, reporter string) bool {
 		count = bytesToInt(value.([]byte))
 	}
 
-	storage.Put(ctx, key, intToBytes(count+1))
+	// Increment and store the new count
+	newCount := count + 1
+	storage.Put(ctx, key, intToBytes(newCount))
+
+	// Get current timestamp
+	timestamp := runtime.GetTime()
+
+	// Emit WalletFlagged event
+	runtime.Notify("WalletFlagged", wallet, reporter, timestamp, newCount)
+
 	runtime.Log("Flagged " + wallet + " by " + reporter)
 	return true
 }
@@ -66,4 +77,37 @@ func bytesToInt(b []byte) int {
 		return 0
 	}
 	return int(b[0]) // assuming single-byte value for simplicity
+}
+
+// generateTestEvents creates test events for end-to-end Kafka testing
+func generateTestEvents() bool {
+	// Test addresses for simulation
+	testAddresses := []string{
+		"NbTiM6h8r99kpRtb428XcsUk1TzKed2gTc",
+		"NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP",
+		"NgaiKFjurmNmiRzDRQGs44yzByXuiruBej",
+		"NhVwRpMi5MdgMNbg8dQgBzPX1SZhTyHp1t",
+		"NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB",
+	}
+
+	testReporters := []string{
+		"SecurityBot1",
+		"FraudDetector",
+		"CommunityMod",
+		"AutoScanner",
+		"AdminReview",
+	}
+
+	// Generate test flags for each address
+	for i := 0; i < len(testAddresses); i++ {
+		flagWallet(testAddresses[i], testReporters[i])
+
+		// Add a small delay simulation by incrementing a counter
+		for j := 0; j < 100; j++ {
+			// Simple delay loop
+		}
+	}
+
+	runtime.Log("Generated test events for 5 addresses")
+	return true
 }
